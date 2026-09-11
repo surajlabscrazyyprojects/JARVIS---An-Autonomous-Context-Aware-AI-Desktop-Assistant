@@ -13,4 +13,10 @@
 
 ## GitHub metadata changes
 
-- No remote repository, commit, or GitHub metadata was created in this audit because the project is not currently a Git repository and GitHub authentication/publication were not performed.
+- The repository was initialized locally on `main`; no GitHub remote or publication was performed because GitHub authentication was unavailable.
+
+## Workspace cleanup
+
+- Quarantined confirmed one-off repair scripts, test captures, logs, and superseded HUD snapshots under the ignored `_PROJECT_QUARANTINE/` folder.
+- Removed generated website workspaces from the Git release index while preserving them locally.
+- Kept the existing application root and startup paths unchanged to avoid runtime regressions.

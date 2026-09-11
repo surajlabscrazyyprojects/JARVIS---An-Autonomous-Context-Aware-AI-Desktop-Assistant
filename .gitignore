@@ -187,6 +187,14 @@ FINAL_SUMMARY.md
 VOICE_PIPELINE_AUDIT.md
 voice plan prompt.txt
 /_test_*.js
+_PROJECT_QUARANTINE/
+
+# Generated website workspaces created by JARVIS tasks; preserved locally but
+# unrelated to the assistant runtime and excluded from the public release.
+apex-coffee-website/
+apex-coffee-website-*/
+business-website-project/
+custom-website/
 
 # --- Private screenshots / recordings ---
 screenshots/
