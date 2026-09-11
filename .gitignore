@@ -1,0 +1,209 @@
+# ===============================
+# JARVIS - GitIgnore (Publication Safe)
+# ===============================
+
+# --- Secrets & Environment ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.p8
+secrets/
+credentials/
+private/
+# Personal API key txt dumps (real keys)
+nvidia's api keys/
+groq api.txt
+gemini api.txt
+fish audio api.txt
+openrouter api.txt
+open router api.txt
+openrouter.txt
+open router.txt
+api groq*.txt
+*_api_keys*.txt
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / Electron ---
+node_modules/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+# Keep package.json/package-lock.json (required) but ignore local installs
+# Electron build artifacts
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.snap
+*.asar
+
+# --- Logs & Runtime ---
+logs/
+!logs/.gitkeep
+*.log
+*.log.*
+jarvis_crash.log
+_run_log.txt
+_import_check.log
+_vision_e2e.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Browser Profile (machine-specific, contains personal paths/cookies) ---
+.jarvis_browser_profile/
+.jaries_browser_profile/
+playwright-report/
+test-results/
+
+# --- Memory & Personal Data ---
+# Runtime memory is local-only: it can contain conversations, reminders,
+# indexed files, embeddings, and other personal context.
+memory/*
+!memory/.gitkeep
+!memory/*.example.json
+!memory/README.md
+# Keep schema, ignore private history
+memory/activity.jsonl
+memory/history.json
+memory/routine_history.json
+memory/routine_instance.json
+memory/quotes.json
+memory/routine_quotes.json
+memory/reminder_settings.json
+!memory/.gitkeep
+# Keep directory but ignore content (history)
+jarvis_memory.json
+# Alternative memory locations
+memory/screenshots/
+# Persisted local voice selection/state
+config/voice_state.json
+# Generated DBs
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Generated Audio / Cache ---
+runtime/
+!runtime/.gitkeep
+tts_cache/
+memory/tts_cache/
+voices/
+voice_samples/
+voices_cache/
+# Ignore generated WAV, keep required MP3 assets (HUD, startup, reminder are commitable)
+*.wav
+# Do NOT ignore *.mp3 globally - required assets are HUD Sound Effects.mp3, JARVIS STARTUP SOUND.mp3, reminder sound.mp3, etc.
+# Temporary TTS output only
+tts_output/
+audio_cache/
+
+# --- Local backups and audit artifacts ---
+*_backup_*/
+*.zip
+voice_audit_rg.txt
+_voice_hud_excerpt.txt
+
+# --- Machine-specific diagnostics and test captures ---
+test_*.log
+*_crash.log
+
+# --- Personal/proprietary media (keep local; do not publish by accident) ---
+Ariis, Yb Wasg'ood - LUNA BALA*.mp3
+Post Malone, Swae Lee - Sunflower*.mp3
+miles introduction.mp3
+aespa_no_character_with_audio.mp4
+jarvisback.mp4
+
+# --- Local Assets Cache ---
+textures/cache/
+vendor/cache/
+
+# --- IDE & OS ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Temporary helper scripts (outside project root publication) ---
+# These are in parent "iron man" folder, not in repo root, but guard anyway
+_anchors.py
+_anchors.txt
+_blocks.txt
+_css_check.py
+_css_out.txt
+_find_blocks.py
+_fn_end.py
+_fn_out.txt
+_inspect*.py
+_inspect_out*.txt
+_kf_check.py
+_kf_out.txt
+_new_css*.txt
+_slice_css.py
+_splice_css.py
+
+# --- Backup files ---
+*.backup
+*.bak
+*.tmp
+*.temp
+hologram_environment.backup.html
+hologram_environment.before_precision.html
+hologram_environment.pre_task2.html
+jarvis.py.backup
+
+# --- Nested checkouts / internal audit notes (keep local; publish source only) ---
+gods-eye-view/
+AGENTS.md
+ACCEPTANCE_TEST_RESULTS.md
+ARCHITECTURE_DIAGNOSTIC_REPORT.md
+FINAL_SUMMARY.md
+VOICE_PIPELINE_AUDIT.md
+voice plan prompt.txt
+/_test_*.js
+
+# --- Private screenshots / recordings ---
+screenshots/
+# Keep textures but ignore personal screenshots
+memory/screenshots/
+# Ignore personal recordings only if in private folders (do not ignore all mp4/png globally)
+# Keep required video assets: jarvisback.mp4, 2nd clip loop with 3d character.mp4, etc.
+
+# --- Legacy / Extra HUDs (not required for publication, may contain hardcoded keys) ---
+new jarvis hud bestt/
+
+# --- Additional temp helpers (generated during audits) ---
+_gemcheck.py
+_import_check.py
+_tmp_gemma_test.py
+_vision_e2e.py
+# Root-level underscore-prefixed scripts are local one-off repair/debug tools.
+/_*.py
+/_*.log
+_gemcheck.py

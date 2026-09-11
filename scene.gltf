@@ -1,0 +1,395 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 11847,
+      "max": [
+        0.8439769744873047,
+        1.8963379859924316,
+        0.22102199494838715
+      ],
+      "min": [
+        -0.8439769744873047,
+        -0.001996000064536929,
+        -0.24822600185871124
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 142164,
+      "componentType": 5126,
+      "count": 11847,
+      "max": [
+        0.9998406767845154,
+        0.9999991655349731,
+        0.9995909333229065
+      ],
+      "min": [
+        -0.9998406767845154,
+        -0.999996542930603,
+        -0.9999988675117493
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 11847,
+      "max": [
+        0.9999920725822449,
+        0.9997067451477051,
+        0.9998956918716431,
+        1.0
+      ],
+      "min": [
+        -0.9999920725822449,
+        -0.9999988675117493,
+        -0.9999992251396179,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 11847,
+      "max": [
+        0.9930689930915833,
+        0.9875159859657288
+      ],
+      "min": [
+        0.015205999836325645,
+        0.006697999779134989
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 35142,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Darth_Ir0n (https://sketchfab.com/DarthIron)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/iron-man-with-no-rig-3972bc5d690147b98251b4753c85d111",
+      "title": "Iron-man-with no rig"
+    },
+    "generator": "Sketchfab-12.65.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 140568,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 94776,
+      "byteOffset": 140568,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 284328,
+      "byteOffset": 235344,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 189552,
+      "byteOffset": 519672,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 709224,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/COC_iOS_HER_TST_VII_B_baseColor.png"
+    },
+    {
+      "uri": "textures/COC_iOS_HER_TST_VII_B_emissive.png"
+    },
+    {
+      "uri": "textures/COC_iOS_HER_TST_VII_B_normal.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "emissiveFactor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissiveTexture": {
+        "index": 1
+      },
+      "name": "COC_iOS_HER_TST_VII_B",
+      "normalTexture": {
+        "index": 2,
+        "scale": 0.09840441251664854
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "roughnessFactor": 0.15318625903008834
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "M-COC_iOS_HERO_Tony_Stark_Iron_Man_Mark_VII_COC_iOS_HER_TST_VII_B_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        0.0028405433986335993,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        6.307273367220033e-19,
+        -0.0028405433986335993,
+        0.0,
+        0.0,
+        0.0028405433986335993,
+        6.307273367220033e-19,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "iron man.fbx"
+    },
+    {
+      "children": [
+        3,
+        5,
+        8
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4
+      ],
+      "matrix": [
+        343.44818115234375,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        343.4481811523392,
+        5.595481291574878e-05,
+        0.0,
+        0.0,
+        -5.595481291574878e-05,
+        343.4481811523392,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "M-COC_iOS_HERO_Tony_Stark_Iron_Man_Mark_VII"
+    },
+    {
+      "mesh": 0,
+      "name": "M-COC_iOS_HERO_Tony_Stark_Iron_Man_Mark_VII_COC_iOS_HER_TST_VII_B_0"
+    },
+    {
+      "children": [
+        6
+      ],
+      "matrix": [
+        -24.151295093840858,
+        -96.5645536914419,
+        9.591842447716513,
+        0.0,
+        31.785505782457967,
+        -17.211202615943357,
+        -93.23870508896118,
+        0.0,
+        91.68640387999616,
+        -19.469537686439985,
+        34.85025747150969,
+        0.0,
+        -147.11241149902344,
+        -668.8824462890625,
+        -345.5830078125,
+        1.0
+      ],
+      "name": "Lamp"
+    },
+    {
+      "children": [
+        7
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Object_6"
+    },
+    {
+      "name": "Object_7"
+    },
+    {
+      "children": [
+        9
+      ],
+      "matrix": [
+        -4.650414766589502,
+        95.26627420952306,
+        -30.04511798705074,
+        0.0,
+        64.74238234080656,
+        25.779646725693915,
+        71.72053589742762,
+        0.0,
+        76.07100766796286,
+        -16.116622769871835,
+        -62.87651598867727,
+        0.0,
+        13.904023170471191,
+        -325.0199279785156,
+        350.313720703125,
+        1.0
+      ],
+      "name": "Lamp.001"
+    },
+    {
+      "children": [
+        10
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Object_9"
+    },
+    {
+      "name": "Object_10"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ]
+}

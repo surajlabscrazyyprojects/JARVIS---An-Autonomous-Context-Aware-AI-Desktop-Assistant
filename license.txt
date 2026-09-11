@@ -1,0 +1,11 @@
+Model Information:
+* title:	Iron-man-with no rig
+* source:	https://sketchfab.com/3d-models/iron-man-with-no-rig-3972bc5d690147b98251b4753c85d111
+* author:	Darth_Ir0n (https://sketchfab.com/DarthIron)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Iron-man-with no rig" (https://sketchfab.com/3d-models/iron-man-with-no-rig-3972bc5d690147b98251b4753c85d111) by Darth_Ir0n (https://sketchfab.com/DarthIron) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

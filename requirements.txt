@@ -1,0 +1,21 @@
+websockets>=12.0
+requests>=2.31.0
+pyautogui>=0.9.54
+psutil>=5.9.8
+Pillow>=10.2.0
+pywin32>=306; platform_system == "Windows"
+pyperclip>=1.8.2
+pyaudio>=0.2.14
+faster-whisper>=1.0.0
+numpy>=1.24.0
+msgpack>=1.0
+speechrecognition>=3.10.0
+openai>=1.30.0
+google-genai>=0.2.0
+playwright>=1.45.0
+openpyxl>=3.1.0
+python-pptx>=0.6.23
+python-docx>=1.1.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+pytest-asyncio>=0.23.0

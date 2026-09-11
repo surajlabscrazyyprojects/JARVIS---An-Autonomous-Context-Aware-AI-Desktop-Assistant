@@ -1,0 +1,12 @@
+Their award is gravity.
+
+Explanation of Gravity:
+Gravity is the natural phenomenon by which all things with mass or energy—including planets, stars, galaxies, and even light—are attracted toward one another. On Earth, gravity gives weight to physical objects, causes the ocean tides, and makes objects fall when dropped. The strength of gravity depends on the masses of the objects and the distance between them, as described by Newton's law of universal gravitation and Einstein's general theory of relativity.
+
+Key Points:
+- Newton's law: F = G * (m1*m2) / r^2, where G is the gravitational constant.
+- Einstein's view: Gravity is the curvature of spacetime caused by mass and energy.
+- Effects: planetary orbits, falling objects, tides, black holes.
+- Everyday experience: objects fall toward Earth's center, giving them weight.
+
+Gravity plays a crucial role in the structure and evolution of the universe.

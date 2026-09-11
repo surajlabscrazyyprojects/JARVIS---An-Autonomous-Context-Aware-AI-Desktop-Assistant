@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>God's Eye — Offline</title>
+<style>
+  html,body{margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000; font-family:'Share Tech Mono', monospace; }
+  #container{position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(ellipse at center, #001a2e 0%, #000 70%); }
+  .globe{
+    width: min(62vmin, 520px); height: min(62vmin, 520px);
+    border: 2px solid #00d4ff; border-radius: 50%;
+    box-shadow: 0 0 60px rgba(0,212,255,0.5), inset 0 0 40px rgba(0,212,255,0.2);
+    position: relative; display:grid; place-items:center;
+    animation: spin 60s linear infinite;
+  }
+  .globe:before,.globe:after{content:""; position:absolute; border:1px solid rgba(0,212,255,0.6); border-radius:50%;}
+  .globe:before{inset:18% 0;}
+  .globe:after{inset:0 30%;}
+  .globe span{position:absolute; inset:50% 0 auto; border-top:1px solid rgba(0,212,255,0.5);}
+  .globe b{position:relative; z-index:1; color:#00d4ff; letter-spacing:6px; font-size:18px; text-shadow:0 0 12px #00d4ff; animation: spin 60s linear infinite reverse;}
+  .label{position:absolute; bottom:18%; left:50%; transform:translateX(-50%); color:#00ffcc; font-size:11px; letter-spacing:3px; text-shadow:0 0 8px #00ffcc; white-space:nowrap;}
+  .badge{
+    position:absolute; top:16px; left:50%; transform:translateX(-50%);
+    font-size:10px; letter-spacing:2px; color:#00d4ff; background:rgba(0,20,40,0.8); border:1px solid rgba(0,212,255,0.4);
+    padding:6px 14px; backdrop-filter:blur(6px);
+  }
+  .grid{position:absolute; inset:0; background:
+    linear-gradient(rgba(0,212,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.07) 1px, transparent 1px);
+    background-size: 40px 40px; opacity:0.3; pointer-events:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+  .pulse{animation: pulse 2s infinite;}
+</style>
+</head>
+<body>
+<div id="container">
+  <div class="grid"></div>
+  <div class="globe"><span></span><b>GOD'S EYE</b><div class="label">OFFLINE • READY • GLOBAL VIEW</div></div>
+  <div class="badge">J.A.R.V.I.S. // GOD'S EYE — OFFLINE READY</div>
+</div>
+<script>
+  // Notify parent (JARVIS) that offline viewer is ready
+  try { window.parent.postMessage({type:'gods_eye_ready', url: location.href, offline:true}, '*'); } catch(e){}
+  console.log('[GodsEye Offline] holographic offline globe ready - no server needed');
+  // Keep parent informed
+  setTimeout(()=>{ try{ window.parent.postMessage({type:'gods_eye_ready'}, '*'); }catch(e){} }, 500);
+</script>
+</body>
+</html>

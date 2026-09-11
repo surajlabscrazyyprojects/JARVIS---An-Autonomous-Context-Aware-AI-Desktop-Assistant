@@ -1,0 +1,7 @@
+body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #0f172a; color: #f8fafc; }
+header { padding: 1.5rem 2rem; background: #1e293b; border-bottom: 1px solid #334155; }
+.nav-bar { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
+.hero { text-align: center; padding: 5rem 2rem; }
+.hero h2 { font-size: 2.8rem; color: #38bdf8; margin-bottom: 1rem; }
+.btn { background: #38bdf8; color: #0f172a; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
+footer { text-align: center; padding: 2rem; color: #64748b; font-size: 0.9rem; }

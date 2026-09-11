@@ -1,0 +1,11 @@
+Model Information:
+* title:	Miles morales
+* source:	https://sketchfab.com/3d-models/miles-morales-ff65aee8ba184d30887b7eb6ac22627b
+* author:	Ahad4940 (https://sketchfab.com/Ahad4940)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Miles morales" (https://sketchfab.com/3d-models/miles-morales-ff65aee8ba184d30887b7eb6ac22627b) by Ahad4940 (https://sketchfab.com/Ahad4940) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

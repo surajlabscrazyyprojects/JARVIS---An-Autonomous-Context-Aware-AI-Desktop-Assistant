@@ -1,0 +1,21 @@
+{
+  "name": "jarvis-hud",
+  "version": "1.0.0",
+  "description": "JARVIS Holographic Environment - Electron wrapper with WebContentsView Spidey Tracker",
+  "main": "electron_main.js",
+  "scripts": {
+    "start": "electron .",
+    "electron": "electron electron_main.js",
+    "dev": "electron electron_main.js --dev",
+    "voice:benchmark": "python scripts/voice_benchmark.py",
+    "voice:diag": "python scripts/voice_diag.py"
+  },
+  "author": "JARVIS",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.7.0"
+  },
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}
