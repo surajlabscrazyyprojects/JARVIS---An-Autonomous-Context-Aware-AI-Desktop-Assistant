@@ -7313,7 +7313,15 @@
                     break;
                 case 'done':
                     pendingAgentPermission = false;
-                    await speakWithLocalTTS(text || 'I’m ready.');
+                    // `done` is a transport/completion marker. Conversation,
+                    // task, and error messages are spoken by their own
+                    // handlers above. Speaking a canned fallback here made
+                    // every normal response end with "I'm ready" (and caused
+                    // the assistant to repeat itself when several completion
+                    // markers arrived for one turn).
+                    if (text && String(text).trim()) {
+                        await speakWithLocalTTS(String(text).trim());
+                    }
                     break;
                 case 'error':
                     pendingAgentPermission = false;
