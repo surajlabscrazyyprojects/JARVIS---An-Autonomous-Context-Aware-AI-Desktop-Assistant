@@ -6450,7 +6450,8 @@
                         updateLiveTranscript(text, true);
                         submitToJarvis(rest);
                     } else {
-                        try { speakWithLocalTTS("I'm listening."); } catch (_) {}
+                        // Bare activation is deliberately silent. The HUD
+                        // already shows listening; avoid canned readiness audio.
                         try { updateLiveTranscript('listening resumed', true); } catch (_) {}
                     }
                 } else if (text) {
@@ -7316,7 +7317,7 @@
                     // `done` is a transport/completion marker. Conversation,
                     // task, and error messages are spoken by their own
                     // handlers above. Speaking a canned fallback here made
-                    // every normal response end with "I'm ready" (and caused
+                    // every normal response end with a canned readiness line (and caused
                     // the assistant to repeat itself when several completion
                     // markers arrived for one turn).
                     if (text && String(text).trim()) {
@@ -8177,7 +8178,8 @@
             }
             if (/\b(wake up|resume listening|listen to me)\b/.test(qlow) && !voiceSessionOn) {
                 try { setVoiceSession(true); } catch (_) {}
-                try { await speakWithLocalTTS("I'm listening."); } catch (_) {}
+                // Resuming is reflected by the HUD; keep the voice channel
+                // silent until the user has a real request.
                 return;
             }
 

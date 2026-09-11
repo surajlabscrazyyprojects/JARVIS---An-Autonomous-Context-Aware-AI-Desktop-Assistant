@@ -179,8 +179,13 @@ def format_for_speech(raw: str, kind: str = "answer", tone: str = NEUTRAL,
     clean = re.sub(r"(?i)^okay\s*,?\s*sir[.!]?\s*", "Understood. ", clean).strip()
     clean = re.sub(r"(?i)^task completed\s*,?\s*sir[.!]?\s*", "The task is complete. ", clean).strip()
     clean = re.sub(r"(?i)^that'?s a great idea[.!]?\s*", "I’ll look into that. ", clean).strip()
+    # Readiness is a UI/system state, not a conversational answer. Remove a
+    # standalone readiness opener while preserving useful facts such as
+    # “the installer is ready”.
+    clean = re.sub(r"(?i)^i['’]?m\s+ready(?:\s*,?\s*sir)?[.!]?\s*", "", clean).strip()
+    clean = re.sub(r"(?i)^i\s+am\s+ready(?:\s*,?\s*sir)?[.!]?\s*", "", clean).strip()
     if not clean:
-        clean = "The requested action is complete."
+        clean = "I didn’t get a useful response from the model."
 
     # Collapse to sentences for length control.
     flat = re.sub(r"\s*\n\s*", " ", clean)

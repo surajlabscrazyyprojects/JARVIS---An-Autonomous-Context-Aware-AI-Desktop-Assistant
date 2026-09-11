@@ -37,6 +37,12 @@ def test_sir_discipline():
     assert s.lower().count("sir") <= 1
 
 
+def test_standalone_readiness_is_not_spoken_as_a_canned_reply():
+    s, _ = format_for_speech("I'm ready, sir. Tell me what you need.", tone="neutral")
+    assert "I'm ready" not in s
+    assert "Tell me what you need" in s
+
+
 def test_opener_variety():
     reset_opener_memory()
     format_for_speech("Done. File saved.")

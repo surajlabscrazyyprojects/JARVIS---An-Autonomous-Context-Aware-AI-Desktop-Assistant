@@ -383,9 +383,8 @@ class Brain:
                     log.warning("LLM error with %s: %s", model, err)
                     break
         return (
-            f"Understood, sir: {text}. "
-            "(The live LLM provider is unavailable right now — this reply is "
-            "the local offline fallback.)"
+            "I can't reach the conversation model right now, so I haven't "
+            "taken any action. Check the provider connection and try again."
         )
 
     def verify(self) -> dict:
@@ -1074,9 +1073,8 @@ class Backend:
             await self._send(ws, {"type": "reminders", "list": self.routine.get_reminders()})
             await self._send(ws, {"type": "world_state", "state": self.world_state.snapshot()})
             await self._send(ws, {"type": "context_snapshot", "context": self.context_fusion.snapshot().to_dict()})
-            g = self.routine.get_greeting_if_due()
-            if g:
-                await self._send(ws, g)
+            # Synchronize routine state silently. Greetings are opt-in
+            # notifications, never an unsolicited startup voice response.
             return
         if mtype == "cancel" or mtype == "stop":
             # Global cancellation (spec section 50) — immediate, no questions asked.
@@ -1571,7 +1569,7 @@ class Backend:
 
     # ----- Daily Routine + Reminder scheduler -------------------------
     async def routine_loop(self):
-        """Deterministic scheduler. Emits routine/reminder/greeting events.
+        """Deterministic scheduler. Emits routine/reminder events.
 
         Besides transitions, we periodically re-push the authoritative routine
         + reminder state so the HUD's live countdown always reflects the real
@@ -1585,6 +1583,11 @@ class Backend:
                 try:
                     events = self.routine.tick()
                     for ev in events:
+                        # Daily greetings are intentionally not auto-delivered:
+                        # startup and timer ticks must never make JARVIS speak
+                        # a canned readiness/status line without a user need.
+                        if ev.get("type") == "greeting":
+                            continue
                         await self._send_all(ev)
                     if events:
                         pushed_routine = False
