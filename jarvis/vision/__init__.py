@@ -23,6 +23,9 @@ from jarvis.vision.contracts import (
     VisionElement,
     classify_confidence,
 )
+from jarvis.vision.privacy import VisionMode, VisionPrivacy
+from jarvis.vision.ocr import OCRManager
+from jarvis.vision.coordinates import CoordinateTransform
 
 __all__ = [
     "Bounds",
@@ -38,5 +41,9 @@ __all__ = [
     "Point",
     "ScreenObservation",
     "VisionElement",
+    "VisionMode",
+    "VisionPrivacy",
+    "OCRManager",
+    "CoordinateTransform",
     "classify_confidence",
 ]

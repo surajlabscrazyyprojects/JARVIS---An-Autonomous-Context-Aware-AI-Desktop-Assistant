@@ -40,9 +40,11 @@ from jarvis.motor.keyboard import KeyboardController
 from jarvis.motor.mouse import MouseController
 from jarvis.motor.planner import MotorPlanner
 from jarvis.motor.watchdog import InputSafetyWatchdog
+from jarvis.motor.control import CURSOR_CONTROL
 from jarvis.vision.analyzer import VisionAnalyzer
 from jarvis.vision import capture
 from jarvis.vision.contracts import CONFIDENCE_MEDIUM, ExecutionStatus, ObservationLevel
+from jarvis.vision.privacy import VisionMode
 from jarvis.vision.verifier import VerificationEngine
 
 pyautogui.FAILSAFE = True
@@ -615,7 +617,7 @@ def tool_screen_observe(params):
     try:
         obs = VISION_ANALYZER.analyze_screen(level=int(level) if level is not None else None, goal=goal)
         return {
-            "ok": True,
+            "ok": obs.summary != "SCREEN_VISION_DISABLED",
             "summary": f"Screen observed: {_obs_summary(obs)}",
             "data": obs.to_dict(),
         }
@@ -627,6 +629,8 @@ def tool_screen_question(params):
     """Answer 'what's on my screen' as a concise natural summary."""
     try:
         obs = VISION_ANALYZER.analyze_screen(goal="describe the whole screen", force=True)
+        if obs.summary == "SCREEN_VISION_DISABLED":
+            return {"ok": False, "summary": "Screen vision is disabled.", "data": obs.to_dict()}
         if obs.degraded:
             summary = f"VISION_DEGRADED: active window is '{obs.window_title}'."
         else:
@@ -636,6 +640,37 @@ def tool_screen_question(params):
         return {"ok": True, "summary": summary, "data": obs.to_dict()}
     except Exception as e:
         return {"ok": False, "summary": f"screen question failed: {e}"}
+
+
+def tool_screen_ocr(params):
+    """Extract visible text locally; never uploads the screen to OCR."""
+    region = params.get("region")
+    try:
+        if region is not None:
+            region = tuple(int(v) for v in region)
+        result = VISION_ANALYZER.ocr_screen(region=region)
+        if not result.get("ok"):
+            return {"ok": False, "summary": result.get("error", "OCR unavailable"), "data": result}
+        return {"ok": True, "summary": f"OCR extracted {len(result.get('items', []))} text regions.", "data": result}
+    except Exception as e:
+        return {"ok": False, "summary": f"screen OCR failed: {e}"}
+
+
+def tool_vision_control(params):
+    """Explicitly enable/disable screen vision or select its observation mode."""
+    action = _norm(params.get("action") or params.get("mode") or "status").upper()
+    try:
+        if action in {"ON", "ENABLE", "ENABLED"}:
+            VISION_ANALYZER.privacy.set_enabled(True)
+        elif action in {"OFF", "DISABLE", "DISABLED"}:
+            VISION_ANALYZER.privacy.set_enabled(False)
+        elif action in {m.value for m in VisionMode}:
+            VISION_ANALYZER.privacy.set_mode(action)
+        elif action not in {"STATUS", ""}:
+            return {"ok": False, "summary": f"unknown vision mode: {action}"}
+        return {"ok": True, "summary": f"Screen vision {VISION_ANALYZER.privacy.snapshot()}", "data": VISION_ANALYZER.privacy.snapshot()}
+    except Exception as e:
+        return {"ok": False, "summary": f"vision control failed: {e}"}
 
 
 def tool_find_element(params):
@@ -849,6 +884,8 @@ TOOLS = {
     "find_file": ("observe", tool_find_file, "Recursively find files whose name contains the given text."),
     "screen_observe": ("observe", tool_screen_observe, "Structured screen observation: app, window, UI elements. level=0-4, goal=optional focus."),
     "screen_question": ("observe", tool_screen_question, "Answer 'what is on my screen' with a concise natural summary."),
+    "screen_ocr": ("observe", tool_screen_ocr, "Extract visible screen text locally with OCR; no remote upload."),
+    "vision_control": ("observe", tool_vision_control, "Show or change screen-vision privacy mode: ON, OFF, TASK_AWARE, or CONTINUOUS_LOW_RATE."),
     "find_element": ("observe", tool_find_element, "Find a UI element by label/type. Deterministic UIA first, Gemma vision fallback."),
     "click_element": ("safe", tool_click_element, "Locate a UI element by label/type (or x,y) and click it; re-observes after."),
     "double_click_element": ("safe", tool_double_click_element, "Locate a UI element by label/type (or x,y) and double-click it."),
@@ -905,6 +942,8 @@ SCHEMA = {
     "screen_observe": {"goal": {"type": "string", "description": "Optional focus goal for the analysis."},
                        "level": {"type": "integer", "description": "Force observation level 0-4 (optional)."}},
     "screen_question": {},
+    "screen_ocr": {"region": {"type": "array", "description": "Optional [x,y,w,h] region."}},
+    "vision_control": {"action": {"type": "string", "description": "ON, OFF, STATUS, TASK_AWARE, or CONTINUOUS_LOW_RATE."}},
     "find_element": {"label": {"type": "string", "description": "Visible label/text of the element."},
                      "type": {"type": "string", "description": "Element type (BUTTON, TEXT_FIELD, MENU, CANVAS...)."},
                      "id": {"type": "string", "description": "Known element id (optional)."}},
@@ -1285,8 +1324,19 @@ class ComputerAgent:
         tier, fn, _ = spec
         # Permission auto-granted — JARVIS executes directly per user request.
         await emit({"type": "progress", "text": f"Running {name}..."})
+        physical_actions = {
+            "mouse_move", "mouse_click", "mouse_double", "mouse_right", "mouse_drag",
+            "scroll", "type_text", "press_keys", "press_key", "release_key",
+            "mouse_press_hold", "mouse_release", "open_app", "focus_window", "close_window",
+        }
         try:
-            res = await asyncio.to_thread(fn, args)
+            # One ownership gate prevents concurrent agent tasks from moving
+            # the user's cursor or typing into the wrong window.
+            if name in physical_actions:
+                with CURSOR_CONTROL.acquire():
+                    res = await asyncio.to_thread(fn, args)
+            else:
+                res = await asyncio.to_thread(fn, args)
         except Exception as e:
             res = {"ok": False, "summary": f"exception: {e}"}
         if res.get("ok"):

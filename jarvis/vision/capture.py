@@ -36,6 +36,34 @@ def capture_screen(region: Optional[Tuple[int, int, int, int]] = None) -> Tuple[
     return img, ms
 
 
+def list_monitors() -> list[dict]:
+    """Return monitor geometry when the optional Windows enumerator exists."""
+    try:
+        from screeninfo import get_monitors  # type: ignore
+        return [{"id": i, "x": int(m.x), "y": int(m.y), "width": int(m.width), "height": int(m.height),
+                 "scale": 1.0, "name": getattr(m, "name", "")} for i, m in enumerate(get_monitors())]
+    except Exception:
+        img, _ = capture_screen()
+        return [{"id": 0, "x": 0, "y": 0, "width": img.width, "height": img.height, "scale": 1.0, "name": "primary"}]
+
+
+def capture_monitor(monitor_id: int = 0) -> Tuple[Image.Image, int]:
+    monitors = list_monitors()
+    if monitor_id < 0 or monitor_id >= len(monitors):
+        raise ValueError(f"unknown monitor id: {monitor_id}")
+    m = monitors[monitor_id]
+    return capture_screen((m["x"], m["y"], m["width"], m["height"]))
+
+
+def capture_active_window() -> Tuple[Image.Image, int]:
+    """Capture only the foreground window, excluding unrelated monitors."""
+    from jarvis.vision import win32meta
+    bounds = win32meta.window_rect(win32meta.foreground_hwnd())
+    if bounds is None or bounds.width <= 0 or bounds.height <= 0:
+        return capture_screen()
+    return capture_screen(bounds.to_region())
+
+
 def image_hash(img: Image.Image, size: int = DEFAULT_HASH_SIZE) -> str:
     """Perceptual difference-hash (robust to subtle encode noise, sensitive to
     real layout/content change). Used for screen-change detection plus a
@@ -107,6 +135,9 @@ __all__ = [
     "DEFAULT_HASH_SIZE",
     "DEFAULT_MAX_ANALYSIS_DIM",
     "capture_screen",
+    "capture_active_window",
+    "capture_monitor",
+    "list_monitors",
     "capture_screen_hash",
     "clamp_region",
     "downscaled_gray",

@@ -41,6 +41,8 @@ from jarvis.vision.gemma import GemmaVision, GemmaVisionError
 from jarvis.vision.uiautomation import UIAutomationAdapter, get_uia_adapter
 from jarvis.vision.verifier import VerificationEngine
 from jarvis.vision.visual_memory import VisualMemory
+from jarvis.vision.privacy import VisionMode, VisionPrivacy
+from jarvis.vision.ocr import OCRManager
 
 log = logging.getLogger("jarvis.vision.analyzer")
 
@@ -53,12 +55,16 @@ class VisionAnalyzer:
         gemma: Optional[GemmaVision] = None,
         uia: Optional[UIAutomationAdapter] = None,
         verifier: Optional[VerificationEngine] = None,
+        privacy: Optional[VisionPrivacy] = None,
+        ocr: Optional[OCRManager] = None,
         cache_age: float = OBSERVATION_CACHE_AGE,
     ) -> None:
         self.memory = memory or VisualMemory()
         self.gemma = gemma or GemmaVision()
         self.uia = uia if uia is not None else get_uia_adapter()
         self.verifier = verifier or VerificationEngine()
+        self.privacy = privacy or VisionPrivacy()
+        self.ocr = ocr or OCRManager()
         self.cache_age = cache_age
         self._last_observation: Optional[ScreenObservation] = None
         self._last_level = ObservationLevel.NONE
@@ -91,6 +97,18 @@ class VisionAnalyzer:
     ) -> ScreenObservation:
         """Structured observation of the current screen (adaptive level)."""
         t0 = time.perf_counter()
+        if not self.privacy.enabled:
+            # Do not even query/capture the desktop while vision is disabled.
+            obs = ScreenObservation(
+                observation_level=ObservationLevel.NONE,
+                status=ExecutionStatus.CANCELLED,
+                summary="SCREEN_VISION_DISABLED",
+                degraded=True,
+                timestamp=time.time(),
+            )
+            self._last_observation = None
+            self.memory.invalidate_target("screen vision disabled")
+            return obs
         meta = win32meta.get_active_window_info()
         size = meta.get("screen_size") or win32meta.screen_size()
         cursor = meta.get("cursor") or Point()
@@ -151,6 +169,31 @@ class VisionAnalyzer:
         self._last_observation = obs
         self.memory.record(obs)
         return obs
+
+    def ocr_screen(self, region: Optional[Tuple[int, int, int, int]] = None) -> Dict[str, Any]:
+        """Run optional local OCR for the current screen/region only."""
+        if not self.privacy.enabled:
+            return {"ok": False, "text": "", "items": [], "error": "SCREEN_VISION_DISABLED"}
+        img, capture_ms = capture.capture_screen(region)
+        result = self.ocr.extract(img)
+        if not result.get("ok") and self.uia.available:
+            # Accessibility text is a deterministic local fallback when the
+            # optional Tesseract binary is not installed.
+            items = []
+            for el in self.uia.extract():
+                if not el.label:
+                    continue
+                items.append({
+                    "text": el.label,
+                    "bbox": [int(el.bounds.x), int(el.bounds.y), int(el.bounds.width), int(el.bounds.height)],
+                    "confidence": float(el.confidence),
+                    "source": "uia",
+                })
+            if items:
+                result = {"ok": True, "text": " ".join(item["text"] for item in items), "items": items,
+                          "engine": "uia_text_fallback"}
+        result["capture_ms"] = capture_ms
+        return result
 
     def analyze_region(
         self,
