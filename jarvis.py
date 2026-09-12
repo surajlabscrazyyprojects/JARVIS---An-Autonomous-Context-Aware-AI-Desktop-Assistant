@@ -343,7 +343,10 @@ class Brain:
                     system = (
                         "You are J.A.R.V.I.S., Tony Stark's personal AI. "
                         "Be concise, witty, and helpful. Address the user as 'sir' "
-                        "occasionally. Keep replies under 60 words."
+                        "occasionally. Keep replies under 60 words. Reply in the "
+                        "language used by the user most recently; preserve their "
+                        "script and natural level of formality unless they ask "
+                        "for a translation."
                     )
                     if _persona:
                         tone = estimate_tone(text)
@@ -566,6 +569,12 @@ _stt_recent_results: dict = {}
 _STT_RECENT_MAX = 100
 
 
+def _detected_language(provider_model: str) -> str:
+    """Extract the recognizer's detected language without changing the API tuple."""
+    marker = "|lang:"
+    return provider_model.split(marker, 1)[1] if marker in provider_model else "auto"
+
+
 def _get_stt_lock(name: str) -> threading.Lock:
     with _stt_locks_guard:
         return _stt_locks.setdefault(name, threading.Lock())
@@ -610,14 +619,14 @@ def _transcribe_wav_bytes(data: bytes, model_name: str = None) -> tuple:
     use_groq = STT_PROVIDER in ("auto", "groq") and bool(groq_key) and requested_model != STT_PARTIAL_MODEL
     if use_groq:
         try:
-            text, duration = _transcribe_groq_wav(data, requested_model, groq_key)
-            return text, duration, f"groq:{requested_model}"
+            text, duration, detected_language = _transcribe_groq_wav(data, requested_model, groq_key)
+            return text, duration, f"groq:{requested_model}|lang:{detected_language or 'auto'}"
         except Exception as exc:  # noqa: BLE001
             log.warning("Groq STT primary %s failed: %s", requested_model, exc)
             if requested_model == STT_MODEL_NAME:
                 try:
-                    text, duration = _transcribe_groq_wav(data, STT_GROQ_FALLBACK_MODEL, groq_key)
-                    return text, duration, f"groq:{STT_GROQ_FALLBACK_MODEL}"
+                    text, duration, detected_language = _transcribe_groq_wav(data, STT_GROQ_FALLBACK_MODEL, groq_key)
+                    return text, duration, f"groq:{STT_GROQ_FALLBACK_MODEL}|lang:{detected_language or 'auto'}"
                 except Exception as fallback_exc:  # noqa: BLE001
                     log.warning("Groq STT fallback %s failed: %s", STT_GROQ_FALLBACK_MODEL, fallback_exc)
             if STT_PROVIDER == "groq":
@@ -631,10 +640,13 @@ def _transcribe_wav_bytes(data: bytes, model_name: str = None) -> tuple:
         tmp.write(data)
         tmp.close()
         with _get_stt_lock(local_model if requested_model == STT_MODEL_NAME else requested_model):  # serialize per model
-            segments, info = model.transcribe(tmp.name, language="en", beam_size=1,
-                                              condition_on_previous_text=False)
+            segments, info = model.transcribe(
+                tmp.name, language=None, beam_size=1, best_of=1,
+                temperature=0.0, vad_filter=True,
+                condition_on_previous_text=False)
             parts = [s.text for s in segments if s.text and s.text.strip()]
-        return " ".join(parts).strip(), float(getattr(info, "duration", 0.0) or 0.0), f"local:{local_model}"
+        detected_language = str(getattr(info, "language", "") or "auto")
+        return " ".join(parts).strip(), float(getattr(info, "duration", 0.0) or 0.0), f"local:{local_model}|lang:{detected_language}"
     finally:
         try:
             os.unlink(tmp.name)
@@ -656,7 +668,7 @@ def _transcribe_groq_wav(data: bytes, model: str, api_key: str) -> tuple:
         "https://api.groq.com/openai/v1/audio/transcriptions",
         headers={"Authorization": f"Bearer {api_key}"},
         files={"file": ("utterance.wav", data, "audio/wav")},
-        data={"model": model, "response_format": "json", "language": "en"},
+        data={"model": model, "response_format": "verbose_json", "temperature": "0"},
         timeout=(5, 45),
     )
     if not response.ok:
@@ -667,7 +679,7 @@ def _transcribe_groq_wav(data: bytes, model: str, api_key: str) -> tuple:
     # diagnostic only; never infer successful transcription from duration.
     duration = max(0.0, (len(data) - 44) / 32000)
     log.info("Groq STT model=%s completed in %.0fms", model, (time.monotonic() - started) * 1000)
-    return text, duration
+    return text, duration, str(payload.get("language") or "auto")
 
 
 def _warmup_stt():
@@ -1105,7 +1117,8 @@ class Backend:
                 raw = base64.b64decode(b64, validate=True)
                 text, _, actual_model = await asyncio.to_thread(_transcribe_wav_bytes, raw, STT_PARTIAL_MODEL)
                 await self._send(ws, {"type": "stt_partial_result", "req_id": req_id,
-                                      "utt": msg.get("utt"), "text": text, "model": actual_model})
+                                      "utt": msg.get("utt"), "text": text, "model": actual_model,
+                                      "language": _detected_language(actual_model)})
             except Exception as exc:  # partials are best-effort; final survives
                 log.warning("[WS] stt_partial %s failed: %s", req_id, exc)
             return
@@ -1122,6 +1135,7 @@ class Backend:
                     await self._send(ws, {"type": "stt_result", "req_id": req_id, **trace,
                                           "text": cached["text"], "wav_seconds": cached["wav_seconds"],
                                           "latency_ms": 0, "model": cached["model"],
+                                          "language": cached.get("language", _detected_language(cached["model"])),
                                           "sentinel": bool(msg.get("sentinel")), "cached": True})
                     return
                 b64 = msg.get("audio_b64") or ""
@@ -1133,13 +1147,15 @@ class Backend:
                          req_id, text[:120], dur, time.time() - t0)
                 if req_id:
                     _stt_recent_results[req_id] = {"text": text, "wav_seconds": round(dur, 2),
-                                                   "model": actual_model}
+                                                   "model": actual_model,
+                                                   "language": _detected_language(actual_model)}
                     while len(_stt_recent_results) > _STT_RECENT_MAX:
                         _stt_recent_results.pop(next(iter(_stt_recent_results)))
                 await self._send(ws, {"type": "stt_result", "req_id": req_id, **trace,
                                       "text": text, "wav_seconds": round(dur, 2),
                                       "latency_ms": int((time.time() - t0) * 1000),
                                       "model": actual_model,
+                                      "language": _detected_language(actual_model),
                                       "sentinel": bool(msg.get("sentinel"))})
             except Exception as exc:  # noqa: BLE001
                 log.warning("[WS] stt_audio %s failed: %s", req_id, exc)
@@ -1317,6 +1333,10 @@ class Backend:
             note = None
             if result and result.get("action") not in (None, "none"):
                 note = await self._apply_intel(result)
+            detected_language = str(msg.get("language") or "auto").strip()
+            if detected_language and detected_language.lower() not in {"auto", "unknown"}:
+                language_note = f"Respond in the user's detected language ({detected_language}) and preserve its script."
+                note = f"{note} {language_note}" if note else language_note
             # 4) Continue the normal conversation (Groq) with an optional note
             #    so JARVIS can weave the reminder action into its reply.
             await self.handle_command(text, note=note,

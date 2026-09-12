@@ -176,10 +176,13 @@ class PyAudioMicSource:
 # --------------------------------------------------------------------------
 class WhisperSTT:
     def __init__(self, model_size: str = "base", device: str = "cpu",
-                 compute_type: str = "int8") -> None:
+                 compute_type: str = "int8", language: Optional[str] = None) -> None:
         self.model_size = model_size
         self.device = device
         self.compute_type = compute_type
+        # None enables Whisper's built-in language detector. A language code
+        # can still be supplied for a known-language low-latency deployment.
+        self.language = language
         self._model = None
         self._load_lock = __import__("threading").Lock()
 
@@ -204,8 +207,10 @@ class WhisperSTT:
         a = np.asarray(audio, dtype=np.float32).ravel()
         if a.size == 0:
             return ""
-        segments, _ = self._model.transcribe(a, language="en", beam_size=5,
-                                             vad_filter=True, condition_on_previous_text=False)
+        segments, _ = self._model.transcribe(
+            a, language=self.language, beam_size=1, best_of=1,
+            temperature=0.0, vad_filter=True,
+            condition_on_previous_text=False)
         text = " ".join(s.text for s in segments).strip()
         return text
 

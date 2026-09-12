@@ -6436,6 +6436,10 @@
 
         function handleServerTranscript(text, message) {
             serverSTTClearPending(message && message.req_id);            // Sentinel reply (LISTENING_DISABLED): activation intent or discard.
+            try {
+                ServerSTT.detectedLanguage = (message && message.language) || 'auto';
+                window.__lastDetectedLanguage = ServerSTT.detectedLanguage;
+            } catch (_) {}
             // Duplicate-result guard (§40): the 20s watchdog may retry an
             // stt_audio whose original reply was merely slow. The second
             // stt_result carries the SAME req_id — process it once so one
@@ -8230,7 +8234,7 @@
             }
 
             VoiceTrace.log('AI_REQUEST_SERIALIZED', query.slice(0, 80));
-            if (agentConnected && sendToJarvisAgent({ type: 'command', text: query, via_jarvis: viaJarvis, req_id: reqId, session_id: VoiceTrace.sessionId, turn_id: UtteranceBuffer.turn, character: (() => { try { const cm = getCharacterManagerInstance(); return (cm && cm.getCurrentCharacterId && cm.getCurrentCharacterId()) || 'IRON_MAN'; } catch (_) { return 'IRON_MAN'; } })() })) {
+            if (agentConnected && sendToJarvisAgent({ type: 'command', text: query, language: window.__lastDetectedLanguage || 'auto', via_jarvis: viaJarvis, req_id: reqId, session_id: VoiceTrace.sessionId, turn_id: UtteranceBuffer.turn, character: (() => { try { const cm = getCharacterManagerInstance(); return (cm && cm.getCurrentCharacterId && cm.getCurrentCharacterId()) || 'IRON_MAN'; } catch (_) { return 'IRON_MAN'; } })() })) {
                 VoiceTrace.log('AI_REQUEST_SENT', reqId);
                 stopStreamedTTS();
                 // AI watchdog: an unanswered request must NEVER hang silently.

@@ -1032,7 +1032,8 @@ SYSTEM_PROMPT = (
     "learning or planning goal, explain the strongest options, check relevant persistent memory, "
     "observe the computer when useful, and offer one concrete next step. "
     "12) For current software, pricing, release, or compatibility claims, use a live research tool when available; "
-    "otherwise say that the fact has not been verified."
+    "otherwise say that the fact has not been verified. "
+    "13) For multilingual users, answer in the language and script of the latest user message unless they request translation."
 )
 
 
