@@ -3436,19 +3436,13 @@
                     if (aiAudioCtx && aiAudioCtx.state === 'suspended') aiAudioCtx.resume();
                     if (userAudioCtx && userAudioCtx.state === 'suspended') userAudioCtx.resume();
                 } catch(_){}
-                // Click is the physical-gesture wake path: resumes a stopped
-                // voice session (mic released) as well as a live one.
-                // The listening toggle button handles itself — don't re-arm here.
+                // Outside clicks are never a microphone wake path. Only the
+                // dedicated button (or the restricted standby voice detector)
+                // may change the listening state.
                 try {
                     if (e && e.target && e.target.closest && e.target.closest('#listen-button')) return;
                 } catch (_) {}
-                try {
-                    if (typeof voiceSessionOn !== 'undefined' && !voiceSessionOn && typeof setVoiceSession === 'function') {
-                        setVoiceSession(true);
-                        return;
-                    }
-                } catch (_) {}
-                if (appState === 'LISTENING' && continuousRecognition) {
+                if (typeof voiceSessionOn !== 'undefined' && voiceSessionOn && appState === 'LISTENING' && continuousRecognition) {
                     try { startSTTSafe(); } catch(e) {}
                 }
             });
@@ -5090,7 +5084,8 @@
             // on the shared pivot — every character scales identically.
             renderer.render(scene, camera);
 
-            // 2D Canvas rings
+            // 2D Canvas rings.  CharacterIntegration hides only the central
+            // character for these states; the corner radar remains visible.
             if (appState === 'TRANSCRIBING' || appState === 'SPEAKING') {
                 drawSleekRings();
             }
@@ -5148,6 +5143,13 @@
             // Compatibility entry point for older HUD callers. It has exactly
             // one destination and never falls back to browser recognition.
             console.log('[VOICE] VoiceCaptureManager is the authoritative pipeline');
+            if (typeof voiceSessionOn !== 'undefined' && !voiceSessionOn) {
+                // Persisted OFF state starts only the restricted activation
+                // sentinel; normal STT and conversation turns stay disabled.
+                try { ServerSTT.softOff = true; } catch (_) {}
+                initServerSTT();
+                return;
+            }
             initServerSTT();
             return;
             if (continuousRecognition) {
@@ -6021,7 +6023,8 @@
                 'start listening', 'listen again', 'resume listening',
                 'listen to me', 'hear me out', 'got something to tell',
                 'something to tell you', 'can you listen', 'are you listening',
-                'wake up', 'welcome back',
+                'can you hear me', 'turn on microphone', 'turn on mic',
+                'enable microphone', 'enable mic', 'wake up', 'welcome back',
             ];
             if (/\blisten\b/.test(t)) return true;
             for (const p of pats) { if (t.indexOf(p) !== -1) return true; }
@@ -6312,14 +6315,18 @@
         //   sustained speech gets ONE activation-intent check, then the audio
         //   is dropped. No STT stream, no retention, no history.
         // OFF-hard ({releaseMic:true}): tracks stopped, contexts closed.
-        // Wake from either with a click/tap, the HUD button, or (soft) voice.
+        // Wake from either with the dedicated HUD button or (soft) voice.
         let voiceSessionOn = true;
+        try {
+            voiceSessionOn = window.localStorage.getItem('jarvis.voiceSessionOn') !== '0';
+        } catch (_) {}
         window.__voiceSessionOn = () => voiceSessionOn;
 
         function setVoiceSession(on, opts) {
             opts = opts || {};
             const hard = !!opts.releaseMic;
             voiceSessionOn = !!on;
+            try { window.localStorage.setItem('jarvis.voiceSessionOn', voiceSessionOn ? '1' : '0'); } catch (_) {}
             window.__voiceSessionOn = () => voiceSessionOn;
             try { updateListenButton(); } catch (_) {}
             if (!voiceSessionOn) {
@@ -6327,6 +6334,11 @@
                     if (hard && ServerSTT.vadTimer) { clearInterval(ServerSTT.vadTimer); ServerSTT.vadTimer = null; }
                     ServerSTT.capturing = false;
                     ServerSTT.frames = [];
+                    ServerSTT.preRollFrames = [];
+                    ServerSTT.uttSeq++;
+                    ServerSTT.lastPartialSamples = 0;
+                    ServerSTT.lastPartialAt = 0;
+                    ServerSTT.suppressVad = true;
                     ServerSTT.softOff = !hard;
                     if (hard) {
                         if (ServerSTT.stream) {
@@ -6347,6 +6359,9 @@
                             if (!ServerSTT.started) initServerSTT();
                         } catch (_) {}
                     }
+                    // Keep the VAD suppression active until the next explicit
+                    // button/activation transition, preventing stale callbacks
+                    // from finalizing a pre-toggle turn.
                 } catch (_) {}
                 try { fadeOutAndStopTTS(); hideSubtitles(); } catch (_) {}
                 setAppState('OFFLINE');
@@ -6355,7 +6370,7 @@
                 console.log('[VOICE] session OFF' + (hard ? ' (hard, mic released)' : ' (soft, sentinel armed)'));
             } else {
                 console.log('[VOICE] session ON — resuming continuous listening');
-                try { ServerSTT.softOff = false; setVoiceCaptureState(VoiceCaptureStates.LISTENING); } catch (_) {}
+                try { ServerSTT.suppressVad = false; ServerSTT.softOff = false; setVoiceCaptureState(VoiceCaptureStates.LISTENING); } catch (_) {}
                 setAppState('LISTENING');
                 try {
                     initServerSTT();
@@ -6445,7 +6460,7 @@
                 if (text && isActivationIntent(text)) {
                     console.log('[VOICE][ServerSTT] sentinel activation: ' + JSON.stringify(text));
                     setVoiceSession(true);
-                    const rest = text.replace(/^(please\s+)?(hey(\s+bro)?,?\s+)?(can you\s+|could you\s+)?(start\s+listening|listen(\s+again|\s+to\s+me)?|resume\s+listening|hear me out|wake up|welcome back)[,.\s]*/i, '').trim();
+                    const rest = text.replace(/^(please\s+)?(hey(\s+bro)?,?\s+)?(jarvis[,.\s]+)?(can you\s+|could you\s+)?(start\s+listening|listen(\s+again|\s+to\s+me)?|resume\s+listening|hear me out|can you hear me|turn on (?:the )?(?:microphone|mic)|enable (?:the )?(?:microphone|mic)|wake up|welcome back)[,.\s]*/i, '').trim();
                     if (rest.length > 3) {
                         updateLiveTranscript(text, true);
                         submitToJarvis(rest);
@@ -7113,6 +7128,7 @@
         // call speakWithLocalTTS() -> stopStreamedTTS(), which cancels the real
         // reply's audio, leaving only a stale canned acknowledgement audible.
         let _agentMsgQueue = Promise.resolve();
+        const _progressAnnouncements = new Set();
         function handleAgentMessage(message) {
             _agentMsgQueue = _agentMsgQueue
                 .then(() => _handleAgentMessageInner(message))
@@ -7324,6 +7340,24 @@
                         await speakWithLocalTTS(String(text).trim());
                     }
                     break;
+                case 'task_state': {
+                    // Execution is deliberately a separate lane from the
+                    // conversation lane.  Give one truthful bridge update per
+                    // task/status without flooding or interrupting the final
+                    // verified reply.
+                    const taskKey = `${message.task_id || 'task'}:${message.status || ''}`;
+                    if (message.status === 'executing' && !_progressAnnouncements.has(taskKey)) {
+                        _progressAnnouncements.add(taskKey);
+                        setAppState('PROCESSING');
+                        if (window.__showTopNotification) {
+                            window.__showTopNotification('J.A.R.V.I.S. EXECUTING…', {persistent:true});
+                        }
+                        speakWithLocalTTS('I’m working through that now and I’ll verify the result before I report back.').catch(() => {});
+                    } else if (message.status === 'waiting_for_user') {
+                        setAppState('PROCESSING');
+                    }
+                    break;
+                }
                 case 'error':
                     pendingAgentPermission = false;
                     console.error('Agent error:', text);
@@ -8167,16 +8201,16 @@
                 return;
             }
 
-            // Explicit session stop: user-controlled, mic fully released.
-            // Wake again with a click/tap (spoken wake is impossible with no mic).
+            // Explicit session stop: user-controlled and persistent.  The
+            // dedicated button or the restricted standby detector can wake it.
             const qlow = query.toLowerCase();
-            if (/\b(go to sleep|stop listening|mute yourself|stay quiet|quiet mode|sleep now)\b/.test(qlow)) {
+            if (/\b(stop listening|turn off (?:the )?(?:microphone|mic)|disable (?:the )?(?:microphone|mic)|stop (?:the )?(?:microphone|mic)|don['’]?t (?:listen|hear me)|mute (?:the )?(?:microphone|mic)|stop hearing me|go to sleep|stay quiet|quiet mode|sleep now)\b/.test(qlow)) {
                 try { stopStreamedTTS(); } catch (_) {}
-                try { await speakWithLocalTTS('Going quiet. Click anywhere when you need me.'); } catch (_) {}
                 try { setVoiceSession(false); } catch (_) {}
+                try { await speakWithLocalTTS('Microphone off.'); } catch (_) {}
                 return;
             }
-            if (/\b(wake up|resume listening|listen to me)\b/.test(qlow) && !voiceSessionOn) {
+            if (/\b(listen|listen jarvis|jarvis listen|hear me|hear me out|can you hear me|start listening|turn on (?:the )?(?:microphone|mic)|enable (?:the )?(?:microphone|mic)|wake up|resume listening)\b/.test(qlow) && !voiceSessionOn) {
                 try { setVoiceSession(true); } catch (_) {}
                 // Resuming is reflected by the HUD; keep the voice channel
                 // silent until the user has a real request.

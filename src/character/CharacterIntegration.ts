@@ -351,11 +351,13 @@ export function updateCharacterVisibility(appState: string): void {
   const characterManager = getCharacterManager();
   const currentCharacterId = characterManager.getCurrentCharacterId();
 
-  if (appState === 'IDLE' || appState === 'PROCESSING') {
-    characterManager.setCharacterVisibility(currentCharacterId, true);
-  } else if (appState === 'USER_SPEAKING' || appState === 'AI_SPEAKING') {
-    characterManager.setCharacterVisibility(currentCharacterId, false);
-  }
+  const ringOwnsStage = [
+    'USER_SPEAKING', 'AI_SPEAKING',
+    'SPEECH_DETECTED', 'TRANSCRIBING', 'SPEAKING'
+  ].includes(appState);
+  characterManager.setCharacterVisibility(currentCharacterId, !ringOwnsStage);
+  const activeModel = getActiveCharacterModel();
+  if (activeModel) activeModel.visible = !ringOwnsStage;
 }
 
 /**

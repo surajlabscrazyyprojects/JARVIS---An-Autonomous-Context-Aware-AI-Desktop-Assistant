@@ -139,7 +139,10 @@ export class RenderingPipeline {
     const r = this.renderer;
     r.outputColorSpace    = this.THREE.SRGBColorSpace;
     r.toneMapping         = this.THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.5;   // cinematic, brighter
+    // Keep the user-facing brightness at 100% (1.0).  Higher exposure makes
+    // the hologram look washed out and no longer matches the HUD brightness
+    // control.
+    r.toneMappingExposure = 1.0;
 
     // Enable physically correct lighting (r155+). This is the root cause
     // of incorrect lighting on Hulk/Thor — legacy lights use a different
@@ -150,7 +153,7 @@ export class RenderingPipeline {
 
     // High dynamic range lighting for premium metallic reflections.
     if (typeof r.toneMappingExposure === 'number') {
-      r.toneMappingExposure = 1.5;
+      r.toneMappingExposure = 1.0;
     }
 
     if (r.shadowMap) {

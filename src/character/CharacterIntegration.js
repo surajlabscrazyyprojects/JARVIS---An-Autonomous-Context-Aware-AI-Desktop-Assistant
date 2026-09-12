@@ -464,11 +464,17 @@ export function updateCharacterVisibility(appState) {
   const characterManager = getCharacterManager();
   const currentCharacterId = characterManager.getCurrentCharacterId();
 
-  if (appState === 'IDLE' || appState === 'PROCESSING') {
-    characterManager.setCharacterVisibility(currentCharacterId, true);
-  } else if (appState === 'USER_SPEAKING' || appState === 'AI_SPEAKING') {
-    characterManager.setCharacterVisibility(currentCharacterId, false);
-  }
+  // The browser HUD uses the live VoiceStates names below.  Keep the
+  // legacy aliases too, but hide the model while the central ring owns the
+  // stage (speech detection/transcription and AI speech).  This is scoped to
+  // the main character only; the corner radar/standby ring is independent.
+  const ringOwnsStage = [
+    'USER_SPEAKING', 'AI_SPEAKING',
+    'SPEECH_DETECTED', 'TRANSCRIBING', 'SPEAKING'
+  ].includes(appState);
+  characterManager.setCharacterVisibility(currentCharacterId, !ringOwnsStage);
+  const activeModel = getActiveCharacterModel();
+  if (activeModel) activeModel.visible = !ringOwnsStage;
 }
 
 /**
