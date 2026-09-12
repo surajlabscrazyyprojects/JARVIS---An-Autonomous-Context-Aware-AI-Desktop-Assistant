@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Optional
 
 from agent import ComputerAgent, Memory, doctor as agent_doctor
+from jarvis.voice.language import LanguagePolicy, signal_for_text
 from routine_engine import RoutineEngine
 from reminder_intel import ReminderIntel
 from jarvis.context import ContextFusionEngine
@@ -575,6 +576,12 @@ def _detected_language(provider_model: str) -> str:
     return provider_model.split(marker, 1)[1] if marker in provider_model else "auto"
 
 
+def _stt_language_fields(text: str, provider_model: str) -> dict:
+    signal = signal_for_text(text, _detected_language(provider_model), 0.0)
+    return {"language": signal.primary, "script": signal.script,
+            "language_confidence": signal.confidence, "code_switch": signal.code_switch}
+
+
 def _get_stt_lock(name: str) -> threading.Lock:
     with _stt_locks_guard:
         return _stt_locks.setdefault(name, threading.Lock())
@@ -737,6 +744,7 @@ class Backend:
         self.world_state.apply_event("TOOLS_CHANGED", {"tools": self.capability_registry.available()})
         self.routine = RoutineEngine()
         self.intel = ReminderIntel(self.routine)
+        self.language_policy = LanguagePolicy()
         self._conv_history: list = []
         self.clients: set = set()
         self._lock = asyncio.Lock()
@@ -1118,7 +1126,7 @@ class Backend:
                 text, _, actual_model = await asyncio.to_thread(_transcribe_wav_bytes, raw, STT_PARTIAL_MODEL)
                 await self._send(ws, {"type": "stt_partial_result", "req_id": req_id,
                                       "utt": msg.get("utt"), "text": text, "model": actual_model,
-                                      "language": _detected_language(actual_model)})
+                                      **_stt_language_fields(text, actual_model)})
             except Exception as exc:  # partials are best-effort; final survives
                 log.warning("[WS] stt_partial %s failed: %s", req_id, exc)
             return
@@ -1135,7 +1143,7 @@ class Backend:
                     await self._send(ws, {"type": "stt_result", "req_id": req_id, **trace,
                                           "text": cached["text"], "wav_seconds": cached["wav_seconds"],
                                           "latency_ms": 0, "model": cached["model"],
-                                          "language": cached.get("language", _detected_language(cached["model"])),
+                                          **_stt_language_fields(cached["text"], cached["model"]),
                                           "sentinel": bool(msg.get("sentinel")), "cached": True})
                     return
                 b64 = msg.get("audio_b64") or ""
@@ -1155,7 +1163,7 @@ class Backend:
                                       "text": text, "wav_seconds": round(dur, 2),
                                       "latency_ms": int((time.time() - t0) * 1000),
                                       "model": actual_model,
-                                      "language": _detected_language(actual_model),
+                                      **_stt_language_fields(text, actual_model),
                                       "sentinel": bool(msg.get("sentinel"))})
             except Exception as exc:  # noqa: BLE001
                 log.warning("[WS] stt_audio %s failed: %s", req_id, exc)
@@ -1166,9 +1174,14 @@ class Backend:
             text = (msg.get("text") or "").strip()
             log.info("[WS] command/chat received: %r via_jarvis=%s", text[:120], msg.get("via_jarvis"))
             if text:
+                language_signal = self.language_policy.observe(
+                    text, str(msg.get("language") or "auto"),
+                    float(msg.get("language_confidence") or 0.0))
                 log.info("[VOICE_TRACE] AI_REQUEST_RECEIVED req=%s session=%s turn=%s text=%r",
                          msg.get("req_id"), msg.get("session_id"), msg.get("turn_id"), text[:120])
-                await self._world_event("TRANSCRIPT_FINAL", text=text, permission="granted", confidence=1.0)
+                await self._world_event("TRANSCRIPT_FINAL", text=text, permission="granted", confidence=1.0,
+                                        language=language_signal.primary,
+                                        language_signal=language_signal.to_dict())
                 context = self.context_fusion.snapshot(text)
                 if self._task_os_goal_phrase(text):
                     task = self.task_os.accept_goal(text, request_id=f"REQ-{int(time.time()) % 10000:04d}")
@@ -1333,9 +1346,9 @@ class Backend:
             note = None
             if result and result.get("action") not in (None, "none"):
                 note = await self._apply_intel(result)
-            detected_language = str(msg.get("language") or "auto").strip()
+            detected_language = language_signal.primary
             if detected_language and detected_language.lower() not in {"auto", "unknown"}:
-                language_note = f"Respond in the user's detected language ({detected_language}) and preserve its script."
+                language_note = f"Respond in the user's detected language ({detected_language}) and preserve its script. Language metadata: {language_signal.to_dict()}."
                 note = f"{note} {language_note}" if note else language_note
             # 4) Continue the normal conversation (Groq) with an optional note
             #    so JARVIS can weave the reminder action into its reply.

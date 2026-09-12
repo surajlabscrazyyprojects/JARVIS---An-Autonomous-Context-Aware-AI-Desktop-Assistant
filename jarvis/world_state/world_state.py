@@ -71,6 +71,8 @@ class ConversationState:
     recent_transcript: str = ""
     recent_intent: str = ""
     last_tool_result: str = ""
+    language: str = "auto"
+    language_signal: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
 
 
@@ -145,6 +147,8 @@ class WorldStateManager:
         elif event == "TRANSCRIPT_FINAL":
             self._state.conversation.recent_transcript = str(payload.get("text") or "")
             self._state.conversation.recent_intent = str(payload.get("intent") or "")
+            self._state.conversation.language = str(payload.get("language") or "auto")
+            self._state.conversation.language_signal = dict(payload.get("language_signal") or {})
             self._state.conversation.timestamp = now
             self._record_source("voice", timestamp=now, confidence=float(payload.get("confidence", 1.0)), permission=payload.get("permission", "granted"))
         elif event in {"TASK_STARTED", "TASK_PROGRESS", "TASK_EXECUTING", "TASK_VERIFYING", "TASK_FAILED", "TASK_COMPLETED"}:

@@ -6439,6 +6439,7 @@
             try {
                 ServerSTT.detectedLanguage = (message && message.language) || 'auto';
                 window.__lastDetectedLanguage = ServerSTT.detectedLanguage;
+                setLiveTranscriptLanguage(ServerSTT.detectedLanguage, message && message.script);
             } catch (_) {}
             // Duplicate-result guard (§40): the 20s watchdog may retry an
             // stt_audio whose original reply was merely slow. The second
@@ -7124,6 +7125,14 @@
                     liveTranscriptEl.classList.add('hidden');
                 }, 4000);
             }
+        }
+
+        function setLiveTranscriptLanguage(language, script) {
+            if (!liveTranscriptEl) return;
+            const rtl = script === 'Arabic' || script === 'Hebrew' || ['ar', 'he', 'ur', 'fa'].includes(String(language || '').toLowerCase());
+            liveTranscriptEl.dir = rtl ? 'rtl' : 'ltr';
+            liveTranscriptEl.lang = String(language || 'auto');
+            liveTranscriptEl.dataset.language = String(language || 'auto');
         }
 
         // Agent messages are queued serially. The backend sends a 'conversation'
